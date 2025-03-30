@@ -130,7 +130,7 @@ except Exception as e:
 
 # Input for GA parameters
 pop_size = st.sidebar.number_input("Population Size", min_value=2, value=10)
-generations = st.sidebar.number_input("Number of Generations", min_value=1, value=50)
+generations = st.sidebar.number_input("Number of Generations", min_value=1, value=10)
 mutation_rate = st.sidebar.slider("Mutation Rate", 0.0, 1.0, 0.2)
 tournament_k = st.sidebar.number_input("Tournament Size", min_value=2, value=3)
 elitism_count = st.sidebar.number_input("Elitism Count", min_value=0, max_value=pop_size, value=1)
