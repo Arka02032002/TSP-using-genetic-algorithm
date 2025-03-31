@@ -118,7 +118,7 @@ except Exception as e:
     st.stop()
 
 pop_size = st.sidebar.number_input("Population Size", min_value=2, value=10)
-generations = st.sidebar.number_input("Number of Generations", min_value=1, value=50)
+generations = st.sidebar.number_input("Number of Generations", min_value=1, value=10)
 mutation_rate = st.sidebar.slider("Mutation Rate", 0.0, 1.0, 0.2)
 tournament_k = st.sidebar.number_input("Tournament Size", min_value=2, value=3)
 elitism_count = st.sidebar.number_input("Elitism Count", min_value=0, max_value=pop_size, value=1)
@@ -137,16 +137,21 @@ if st.sidebar.button("Run Genetic Algorithm"):
     
     fig_placeholder = st.empty()
     
+    # 🔹 FIX: Generate fixed city positions once (instead of changing each time)
+    np.random.seed(42)  # For reproducibility
+    x, y = np.random.rand(n), np.random.rand(n)
+
     while True:  
         for gen in range(len(best_routes)):
             fig, ax = plt.subplots()
             route = best_routes[gen]
-            x, y = np.random.rand(n), np.random.rand(n)  # Random positions for cities
-            
+
+            # Plot cities
             for i in range(n):
                 ax.scatter(x[i], y[i], color="red", s=100)
                 ax.text(x[i], y[i], cities[i], fontsize=12, ha="right", color="black")
 
+            # Draw edges (TSP best path for this generation)
             for i in range(n):
                 city1, city2 = route[i], route[(i + 1) % n]
                 ax.plot([x[city1], x[city2]], [y[city1], y[city2]], 'b-', linewidth=2)
@@ -155,4 +160,4 @@ if st.sidebar.button("Run Genetic Algorithm"):
             ax.set_xticks([])
             ax.set_yticks([])
             fig_placeholder.pyplot(fig)
-            time.sleep(1)
+            time.sleep(2)
