@@ -52,8 +52,8 @@ def genetic_algorithm(distance_matrix, pop_size, generations, mutation_rate=0.2,
     n = len(distance_matrix)
     population = initial_population(pop_size, n)
     
-    best_per_gen = []  # To store best distance per generation
-    best_routes = []   # To store best route per generation
+    best_per_gen = []
+    best_routes = []
 
     fitness = [calculate_total_distance(route, distance_matrix) for route in population]
     best_index = np.argmin(fitness)
@@ -137,9 +137,10 @@ if st.sidebar.button("Run Genetic Algorithm"):
     
     fig_placeholder = st.empty()
     
-    # 🔹 FIX: Generate fixed city positions once (instead of changing each time)
-    np.random.seed(42)  # For reproducibility
-    x, y = np.random.rand(n), np.random.rand(n)
+    # 🔹 FIX: Arrange cities in a circular shape
+    theta = np.linspace(0, 2*np.pi, n, endpoint=False)
+    x = np.cos(theta)  # X-coordinates
+    y = np.sin(theta)  # Y-coordinates
 
     while True:  
         for gen in range(len(best_routes)):
@@ -160,4 +161,4 @@ if st.sidebar.button("Run Genetic Algorithm"):
             ax.set_xticks([])
             ax.set_yticks([])
             fig_placeholder.pyplot(fig)
-            time.sleep(2)
+            time.sleep(1)
