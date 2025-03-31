@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import time
 
 # ----------------------------
 # Genetic Algorithm Functions
@@ -31,9 +32,7 @@ def order_crossover(parent1, parent2):
     size = len(parent1)
     child = [None] * size
     start, end = sorted(random.sample(range(size), 2))
-    # Copy the segment from parent1
     child[start:end+1] = parent1[start:end+1]
-    # Fill the rest with parent2 in order skipping the cities already in child.
     pointer = 0
     for city in parent2:
         if city not in child:
@@ -56,7 +55,6 @@ def genetic_algorithm(distance_matrix, pop_size, generations, mutation_rate=0.2,
     best_per_gen = []  # To store best distance per generation
     best_routes = []   # To store best route per generation
 
-    # Evaluate initial fitness
     fitness = [calculate_total_distance(route, distance_matrix) for route in population]
     best_index = np.argmin(fitness)
     best_route = population[best_index]
@@ -64,24 +62,18 @@ def genetic_algorithm(distance_matrix, pop_size, generations, mutation_rate=0.2,
     best_per_gen.append(best_distance)
     best_routes.append(best_route)
 
-    # Main loop
     for gen in range(generations):
         new_population = []
-        # Elitism: directly carry over best individuals
         sorted_indices = np.argsort(fitness)
         for idx in sorted_indices[:elitism_count]:
             new_population.append(population[idx].copy())
         
-        # Create the rest of the new generation
         while len(new_population) < pop_size:
-            # Select two parents using tournament selection (without replacement within each tournament)
             parent1 = tournament_selection(population, fitness, k=tournament_k)
             parent2 = parent1
             while parent2 == parent1:
                 parent2 = tournament_selection(population, fitness, k=tournament_k)
-            # Crossover
             child = order_crossover(parent1, parent2)
-            # Mutation
             child = swap_mutation(child, mutation_rate)
             new_population.append(child)
         
@@ -98,16 +90,14 @@ def genetic_algorithm(distance_matrix, pop_size, generations, mutation_rate=0.2,
 # ----------------------------
 # Streamlit App
 # ----------------------------
-st.title("TSP Solver using Genetic Algorithm")
+st.title("TSP Solver with Animated Route Evolution")
 
 st.sidebar.header("Input Parameters")
 
-# User input for city names
 cities_input = st.sidebar.text_input("Enter city names (comma separated)", "A,B,C,D,E")
 cities = [c.strip() for c in cities_input.split(",")]
 n = len(cities)
 
-# Input for distance matrix
 st.sidebar.subheader("Distance Matrix")
 st.sidebar.write("Enter the distance matrix with rows separated by newlines and values by commas.")
 default_matrix = "\n".join([", ".join(map(str, row)) for row in 
@@ -118,7 +108,6 @@ default_matrix = "\n".join([", ".join(map(str, row)) for row in
                             [7, 6, 9, 6, 0]]])
 matrix_input = st.sidebar.text_area("Distance Matrix", default_matrix, height=200)
 
-# Parse the distance matrix
 try:
     distance_matrix = np.array([[float(num) for num in row.split(",")] 
                                 for row in matrix_input.strip().split("\n")])
@@ -128,38 +117,42 @@ except Exception as e:
     st.sidebar.error("Error parsing distance matrix. Please check your input format.")
     st.stop()
 
-# Input for GA parameters
 pop_size = st.sidebar.number_input("Population Size", min_value=2, value=10)
-generations = st.sidebar.number_input("Number of Generations", min_value=1, value=10)
+generations = st.sidebar.number_input("Number of Generations", min_value=1, value=50)
 mutation_rate = st.sidebar.slider("Mutation Rate", 0.0, 1.0, 0.2)
 tournament_k = st.sidebar.number_input("Tournament Size", min_value=2, value=3)
 elitism_count = st.sidebar.number_input("Elitism Count", min_value=0, max_value=pop_size, value=1)
 
-# Run the GA when button is pressed
 if st.sidebar.button("Run Genetic Algorithm"):
     st.header("GA Results")
     st.write("**Cities:**", cities)
     
     best_routes, best_distances = genetic_algorithm(distance_matrix, int(pop_size), int(generations), 
                                                     mutation_rate, int(tournament_k), int(elitism_count))
-    
-    # Display best route and distance for each generation in a table
+
     results = {"Generation": list(range(generations+1)),
                "Best Distance": best_distances,
                "Best Route": [" -> ".join([cities[i] for i in route]) for route in best_routes]}
     st.table(results)
     
-    # Plot improvement graph
-    fig, ax = plt.subplots()
-    ax.plot(range(generations+1), best_distances, marker="o", linestyle="-")
-    ax.set_title("Improvement in Best Distance Over Generations")
-    ax.set_xlabel("Generation")
-    ax.set_ylabel("Best Distance")
-    st.pyplot(fig)
+    fig_placeholder = st.empty()
     
-    # Display final best route
-    final_best_route = best_routes[-1]
-    final_best_distance = best_distances[-1]
-    st.subheader("Final Best Route")
-    st.write("Route:", " -> ".join([cities[i] for i in final_best_route]))
-    st.write("Total Distance:", final_best_distance)
+    while True:  
+        for gen in range(len(best_routes)):
+            fig, ax = plt.subplots()
+            route = best_routes[gen]
+            x, y = np.random.rand(n), np.random.rand(n)  # Random positions for cities
+            
+            for i in range(n):
+                ax.scatter(x[i], y[i], color="red", s=100)
+                ax.text(x[i], y[i], cities[i], fontsize=12, ha="right", color="black")
+
+            for i in range(n):
+                city1, city2 = route[i], route[(i + 1) % n]
+                ax.plot([x[city1], x[city2]], [y[city1], y[city2]], 'b-', linewidth=2)
+
+            ax.set_title(f"Best Route at Generation {gen}\nDistance: {best_distances[gen]}")
+            ax.set_xticks([])
+            ax.set_yticks([])
+            fig_placeholder.pyplot(fig)
+            time.sleep(1)
